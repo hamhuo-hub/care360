@@ -7,18 +7,24 @@ import {
   applyEdgeChanges,
   addEdge,
   Panel,
+  BaseEdge,
+  getSmoothStepPath,
+  NodeResizer,
+  Handle,
+  Position,
+  ReactFlowProvider,
+  useReactFlow,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { NodeResizer } from '@xyflow/react';
 
 function ResizableGroup({ data, selected }) {
   return (
     <>
-      <NodeResizer
-        isVisible={selected}   // 只在选中时显示拖拽手柄
-        minWidth={150}
-        minHeight={100}
-      />
+      <NodeResizer isVisible={selected} minWidth={150} minHeight={100} />
+      <Handle type="target" position={Position.Top} />
+      <Handle type="source" position={Position.Bottom} />
+      <Handle type="target" position={Position.Left} />
+      <Handle type="source" position={Position.Right} />
       <div style={{ padding: '8px 12px', fontWeight: 'bold', fontSize: 12 }}>
         {data.label}
       </div>
@@ -26,129 +32,153 @@ function ResizableGroup({ data, selected }) {
   );
 }
 
-const nodeTypes = {
-  resizableGroup: ResizableGroup,
-};
+function FlowEdge({ id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, data }) {
+  const [edgePath] = getSmoothStepPath({
+    sourceX, sourceY, sourcePosition,
+    targetX, targetY, targetPosition,
+  });
 
-// 1. 定义系统架构的节点 (Nodes)
+  return (
+    <>
+      <BaseEdge id={id} path={edgePath} style={{ stroke: data?.color }} />
+      <circle r="4" fill={data?.color || '#555'}>
+        <animateMotion dur={`${data?.speed || 1}s`} repeatCount="indefinite">
+          <mpath href={`#${id}`} />
+        </animateMotion>
+      </circle>
+    </>
+  );
+}
+
+const nodeTypes = { resizableGroup: ResizableGroup };
+const edgeTypes = { flowEdge: FlowEdge };
+
 const initialNodes = [
+  // ── 父 Group 必须排在子节点前面 ──
   {
     id: 'group-collect',
-    type: 'resizableGroup', // 使用自定义的可调整大小的节点类型
+    type: 'resizableGroup',
     position: { x: -30, y: 0 },
-    style: {
-      width: 500,
-      height: 220,
-      backgroundColor: 'rgba(76,175,80,0.08)',
-      border: '2px solid #4CAF50',
-      borderRadius: 8,
-    },
+    style: { width: 800, height: 400, backgroundColor: 'rgba(76,175,80,0.06)', border: '2px solid #4CAF50', borderRadius: 8 },
     data: { label: '采集层' },
+  },
+  // group-pi 嵌套在 group-collect 里
+  {
+    id: 'group-pi',
+    type: 'resizableGroup',
+    position: { x: 150, y: 15 },
+    style: { width: 610, height: 350, backgroundColor: 'rgba(0,121,107,0.08)', border: '2px dashed #00796B', borderRadius: 8 },
+    data: { label: '树莓派 3B — 边缘计算节点' },
+    parentId: 'group-collect',
+    extent: 'parent',
   },
   {
     id: 'group-aws',
-    type: 'resizableGroup', // 使用自定义的可调整大小的节点类型
-    position: { x: -30, y: 340 },
-    style: {
-      width: 500,
-      height: 220,
-      backgroundColor: 'rgba(76,175,80,0.08)',
-      border: '2px solid #2196F3',
-      borderRadius: 8,
-    },
-    data: { label: 'AWS云' },
+    type: 'resizableGroup',
+    position: { x: -30, y: 450 },
+    style: { width: 780, height: 340, backgroundColor: 'rgba(33,150,243,0.06)', border: '2px solid #2196F3', borderRadius: 8 },
+    data: { label: 'AWS 云端处理矩阵' },
   },
   {
     id: 'group-alert',
-    type: 'resizableGroup', // 使用自定义的可调整大小的节点类型
-    position: { x: -30, y: 760 },
-    style: {
-      width: 500,
-      height: 220,
-      backgroundColor: 'rgba(76,175,80,0.08)',
-      border: '2px solid #F44336',
-      borderRadius: 8,
-    },
-    data: { label: '告警层' },
+    type: 'resizableGroup',
+    position: { x: -30, y: 830 },
+    style: { width: 780, height: 160, backgroundColor: 'rgba(244,67,54,0.06)', border: '2px solid #F44336', borderRadius: 8 },
+    data: { label: '社区中心' },
   },
-  { id: 'bracelet', data: { label: '手环-模拟心率/gps定位/陀螺仪' }, style: { background: '#4CAF50', color: '#fff', border: 'none' }, parentId: 'group-collect', extent: 'parent', position: { x: 30, y: 50 } },
-  { id: 'raspberry-pi', data: { label: '树莓派- 模拟温湿度/火焰监测器' }, style: { background: '#4CAF50', color: '#fff', border: 'none' }, parentId: 'group-collect', extent: 'parent', position: { x: 160, y: 50 } },
-  { id: 'mqtt', data: { label: 'MQTT协议' }, position: { x: 0, y: 260 }, style: { background: '#2196F3', color: '#fff', border: 'none' } },
-  { id: 'iot-core', data: { label: 'AWS IoT Core' }, position: { x: 120, y: 40 }, style: { background: '#2196F3', color: '#fff', border: 'none' }, parentId: 'group-aws', extent: 'parent' },
-  { id: 'lambda', data: { label: 'AWS Lambda' }, position: { x: 120, y: 140 }, style: { background: '#2196F3', color: '#fff', border: 'none' }, parentId: 'group-aws', extent: 'parent' },
-  { id: 'dynamodb', data: { label: 'DynamoDB' }, position: { x: 120, y: 240 }, style: { background: '#2196F3', color: '#fff', border: 'none' }, parentId: 'group-aws', extent: 'parent' },
-  { id: 'sms', data: { label: 'SMS服务' }, position: { x: 40, y: 50 }, style: { background: '#2196F3', color: '#fff', border: 'none' }, parentId: 'group-aws', extent: 'parent' },
-  { id: 'mobile-app', data: { label: '移动APP-接收告警通知' }, position: { x: 120, y: 50 }, style: { background: '#F44336', color: '#fff', border: 'none' }, parentId: 'group-alert', extent: 'parent' },
-  { id: 'home-inside', data: { label: '带麦报警按钮-语音联动/主动警报' }, position: { x: 200, y: 50 }, style: { background: '#F44336', color: '#fff', border: 'none' }, parentId: 'group-alert', extent: 'parent' },
+
+  // ── 采集层子节点 ──
+  { id: 'bracelet', data: { label: '三星 Galaxy Watch\n心率 / GPS / 陀螺仪' }, style: { background: '#388E3C', color: '#fff', border: 'none', fontSize: 11, textAlign: 'center' }, parentId: 'group-collect', extent: 'parent', position: { x: 20, y: 140 } },
+
+  // ── 树莓派六个子模块（左列=采集，中=聚合，右列=处理/上报）──
+  { id: 'pi-collect',     data: { label: '① BLE 穿戴采集\nGalaxy Watch 数据' },   style: { background: '#00796B', color: '#fff', border: 'none', fontSize: 11 }, parentId: 'group-pi', extent: 'parent', position: { x: 20,  y: 60  } },
+  { id: 'pi-env-collect', data: { label: '② 环境传感采集\n温湿度 / 火焰检测' },   style: { background: '#00796B', color: '#fff', border: 'none', fontSize: 11 }, parentId: 'group-pi', extent: 'parent', position: { x: 20,  y: 210 } },
+  { id: 'pi-clean',       data: { label: '③ 清洗与聚合\nJSON Schema 标准化' },    style: { background: '#00796B', color: '#fff', border: 'none', fontSize: 11 }, parentId: 'group-pi', extent: 'parent', position: { x: 210, y: 130 } },
+  { id: 'pi-local-alert', data: { label: '④ 本地告警\n阈值判断' }, style: { background: '#E65100', color: '#fff', border: 'none', fontSize: 11 }, parentId: 'group-pi', extent: 'parent', position: { x: 410, y: 60 } },
+  // pi-upload 作为 Group，内部包含缓存子节点
+  { id: 'pi-upload', type: 'resizableGroup', data: { label: '⑤ 异常打包上报' }, style: { width: 160, height: 130, background: 'rgba(230,81,0,0.12)', border: '2px solid #E65100', borderRadius: 6, fontSize: 11 }, parentId: 'group-pi', extent: 'parent', position: { x: 410, y: 180 } },
+  { id: 'pi-cache', data: { label: '数据缓存\nLocal Buffer' }, style: { background: '#4E342E', color: '#fff', border: 'none', fontSize: 10 }, parentId: 'pi-upload', extent: 'parent', position: { x: 15, y: 50 } },
+
+  // ── MQTT（独立节点，连接采集层与云端）──
+  { id: 'mqtt', data: { label: 'MQTT 协议\ntelemetry/health/#' }, position: { x: 230, y: 415 }, style: { background: '#1565C0', color: '#fff', border: 'none', fontSize: 11 } },
+
+  // ── AWS 云端层（左侧垂直链：IoT Core → Rules；右侧：Lambda + DynamoDB）──
+  { id: 'iot-core',  data: { label: 'AWS IoT Core\nX.509 证书认证' },   style: { background: '#1976D2', color: '#fff', border: 'none', fontSize: 11 }, parentId: 'group-aws', extent: 'parent', position: { x: 80,  y: 60  } },
+  { id: 'iot-rules', data: { label: 'IoT Rules Engine\nSQL 路由拦截' }, style: { background: '#1976D2', color: '#fff', border: 'none', fontSize: 11 }, parentId: 'group-aws', extent: 'parent', position: { x: 80,  y: 200 } },
+  { id: 'lambda',    data: { label: 'AWS Lambda\n实时分析 / 异常标记' }, style: { background: '#1976D2', color: '#fff', border: 'none', fontSize: 11 }, parentId: 'group-aws', extent: 'parent', position: { x: 380, y: 200 } },
+  { id: 'dynamodb',  data: { label: 'DynamoDB\n时序数据高吞吐写入' },   style: { background: '#1976D2', color: '#fff', border: 'none', fontSize: 11 }, parentId: 'group-aws', extent: 'parent', position: { x: 570, y: 60  } },
+
+  // ── 告警层 ──
+  { id: 'sms',        data: { label: 'SMS 短信推送' },        style: { background: '#C62828', color: '#fff', border: 'none', fontSize: 11 }, parentId: 'group-alert', extent: 'parent', position: { x: 60,  y: 60 } },
+  { id: 'albany',     data: { label: '社区汇总大屏' },        style: { background: '#C62828', color: '#fff', border: 'none', fontSize: 11 }, parentId: 'group-alert', extent: 'parent', position: { x: 500, y: 60 } },
 ];
 
-
-// 2. 定义信息流动的连线 (Edges)
 const initialEdges = [
-  {
-    id: 'e-bracelet-mqtt',  // 唯一 id，习惯用 'e-' 前缀
-    source: 'bracelet',     // 从哪个节点出发（用节点的 id）
-    target: 'mqtt',         // 到哪个节点结束
-    animated: true,         // 连接线是否动画
-    type: 'smoothstep'
-  },
-  {
-    id: 'e-raspberry-pi-mqtt',
-    source: 'raspberry-pi',
-    target: 'mqtt',
-    animated: true,
-    type: 'smoothstep'
-  },
-  {
-    id: 'e-mqtt-iot-core',
-    source: 'mqtt',
-    target: 'iot-core',
-    animated: true,
-    type: 'smoothstep'
-  },
-  {
-    id: 'e-iot-core-lambda',
-    source: 'iot-core',
-    target: 'lambda',
-    animated: true,
-    type: 'smoothstep'
-  },
-  // lambda → dynamodb（写入）
-  {
-    id: 'e-lambda-dynamodb',
-    source: 'lambda',
-    target: 'dynamodb',
-    type: 'smoothstep',
-    animated: true,
-    pathOptions: { offset: 20 },   // 向右偏移
-  },
+  // 手环 → 树莓派穿戴采集（BLE）
+  { id: 'e-bracelet-pi-collect',      source: 'bracelet',       target: 'pi-collect',     type: 'flowEdge', data: { color: '#66BB6A', speed: 1.5 } },
 
+  // 树莓派内部流水线（橙色，慢——模拟本地处理耗时）
+  { id: 'e-pi-collect-clean',         source: 'pi-collect',     target: 'pi-clean',       type: 'flowEdge', data: { color: '#FF9800', speed: 2   } },
+  { id: 'e-pi-env-collect-clean',     source: 'pi-env-collect', target: 'pi-clean',       type: 'flowEdge', data: { color: '#FF9800', speed: 2   } },
+  { id: 'e-pi-clean-alert',           source: 'pi-clean',       target: 'pi-local-alert', type: 'flowEdge', data: { color: '#FF5722', speed: 1.8 } },
+  { id: 'e-pi-alert-upload',          source: 'pi-local-alert', target: 'pi-upload',      type: 'flowEdge', data: { color: '#FF5722', speed: 1.2 } },
 
-  {
-    id: 'e-lambda-sms',
-    source: 'lambda',
-    target: 'sms',
-    animated: true,
-    type: 'smoothstep'
-  },
-  {
-    id: 'e-lambda-home-inside',
-    source: 'lambda',
-    target: 'home-inside',
-    animated: true,
-    type: 'smoothstep'
-  },
-  {
-    id: 'e-sms-mobile-app',
-    source: 'sms',
-    target: 'mobile-app',
-    animated: true,
-    type: 'smoothstep'
-  },
+  // 树莓派 → MQTT 上云（绿色，中速）
+  { id: 'e-pi-upload-mqtt',       source: 'pi-upload',      target: 'mqtt',           type: 'flowEdge', data: { color: '#4CAF50', speed: 1 } },
+
+  // 云端主路径（蓝色，快——云端高速处理）
+  { id: 'e-mqtt-iot-core',        source: 'mqtt',           target: 'iot-core',       type: 'flowEdge', data: { color: '#42A5F5', speed: 0.6 } },
+  { id: 'e-iot-core-rules',       source: 'iot-core',       target: 'iot-rules',      type: 'flowEdge', data: { color: '#42A5F5', speed: 0.6 } },
+  { id: 'e-rules-lambda',         source: 'iot-rules',      target: 'lambda',         type: 'flowEdge', data: { color: '#42A5F5', speed: 0.6 } },
+  { id: 'e-lambda-dynamodb',      source: 'lambda',         target: 'dynamodb',       type: 'flowEdge', data: { color: '#42A5F5', speed: 0.6 }, pathOptions: { offset: 20 } },
+  { id: 'e-dynamodb-lambda',      source: 'dynamodb',       target: 'lambda',         type: 'flowEdge', data: { color: '#9C27B0', speed: 1.2 }, pathOptions: { offset: -20 } },
+
+  // 告警触发（红色，最快——紧急通知）
+  { id: 'e-lambda-sms',           source: 'lambda',         target: 'sms',            type: 'flowEdge', data: { color: '#EF5350', speed: 0.4 } },
+  { id: 'e-lambda-albany',        source: 'lambda',         target: 'albany',         type: 'flowEdge', data: { color: '#EF5350', speed: 0.4 } },
 ];
+
+function FlowCanvas({ nodes, edges, setNodes, onNodesChange, onEdgesChange, onConnect, handleReset }) {
+  const { screenToFlowPosition } = useReactFlow();
+
+  const onDoubleClick = useCallback((event) => {
+    const position = screenToFlowPosition({ x: event.clientX, y: event.clientY });
+    const newNode = {
+      id: `node-${Date.now()}`,
+      position,
+      data: { label: '新节点' },
+    };
+    setNodes((nds) => {
+      const updated = [...nds, newNode];
+      localStorage.setItem('flow-nodes', JSON.stringify(updated));
+      return updated;
+    });
+  }, [screenToFlowPosition, setNodes]);
+
+  return (
+    <ReactFlow
+      nodes={nodes}
+      edges={edges}
+      onNodesChange={onNodesChange}
+      onEdgesChange={onEdgesChange}
+      onConnect={onConnect}
+      onDoubleClick={onDoubleClick}
+      nodeTypes={nodeTypes}
+      edgeTypes={edgeTypes}
+      fitView
+    >
+      <Background variant="dots" gap={12} size={1} />
+      <Controls />
+      <Panel position="top-right">
+        <button onClick={handleReset} style={{ padding: '6px 12px', background: '#fff', border: '1px solid #ccc', borderRadius: 4, cursor: 'pointer' }}>
+          重置布局
+        </button>
+      </Panel>
+    </ReactFlow>
+  );
+}
 
 export default function App() {
-
   const [nodes, setNodes] = useState(() => {
     const saved = localStorage.getItem('flow-nodes');
     return saved ? JSON.parse(saved) : initialNodes;
@@ -190,33 +220,19 @@ export default function App() {
     setEdges(initialEdges);
   }, []);
 
-
   return (
-    // 画板必须有一个明确的宽高，否则无法显示
     <div style={{ width: '100vw', height: '100vh' }}>
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        fitView // 自动缩放以适应屏幕
-        onConnect={onConnect} // 连接新边的回调
-        nodeTypes={nodeTypes}
-      >
-        <Background variant="dots" gap={12} size={1} />
-        <Controls />
-        <Panel position="top-right">
-          <button onClick={handleReset} style={{
-            padding: '6px 12px',
-            background: '#fff',
-            border: '1px solid #ccc',
-            borderRadius: 4,
-            cursor: 'pointer',
-          }}>
-            重置布局
-          </button>
-        </Panel>
-      </ReactFlow>
+      <ReactFlowProvider>
+        <FlowCanvas
+          nodes={nodes}
+          edges={edges}
+          setNodes={setNodes}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          handleReset={handleReset}
+        />
+      </ReactFlowProvider>
     </div>
   );
 }
