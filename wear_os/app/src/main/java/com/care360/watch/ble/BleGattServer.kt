@@ -15,9 +15,13 @@ import android.bluetooth.le.AdvertiseData
 import android.bluetooth.le.AdvertiseSettings
 import android.content.Context
 import android.os.ParcelUuid
+import android.util.Log
 import androidx.annotation.RequiresPermission
+
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicReference
+
+private const val TAG = "Care360BLE"
 
 // 两端硬编码同一对 UUID，见 DATA_CONTRACT.md § 4
 val SERVICE_UUID    : UUID = UUID.fromString("12345678-1234-1234-1234-123456789abc")
@@ -61,7 +65,10 @@ class BleGattServer(private val context: Context) {
      * 调用方（CollectorService）保证 jsonBytes 已在限额内。
      */
     @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
+    private fun ByteArray.toHex() = joinToString("") { "%02x".format(it) }
+
     fun notify(jsonBytes: ByteArray) {
+        Log.d(TAG, "发送通知 ${jsonBytes.size} bytes, connected=${isConnected()}")
         val device = connectedDevice.get() ?: return
         val server = gattServer ?: return
         val char = server.getService(SERVICE_UUID)
@@ -100,10 +107,10 @@ class BleGattServer(private val context: Context) {
         override fun onConnectionStateChange(device: BluetoothDevice, status: Int, newState: Int) {
             if (newState == BluetoothProfile.STATE_CONNECTED) {
                 connectedDevice.set(device)
-                // 连接建立后请求 MTU 512，让一批 JSON 单包发完
-                gattServer?.connect(device, false)
+                Log.i(TAG, "Pi 已连接: ${device.address}")
             } else {
                 connectedDevice.compareAndSet(device, null)
+                Log.i(TAG, "Pi 已断开: ${device.address} status=$status")
             }
         }
 
@@ -119,6 +126,7 @@ class BleGattServer(private val context: Context) {
             preparedWrite: Boolean, responseNeeded: Boolean,
             offset: Int, value: ByteArray,
         ) {
+            Log.i(TAG, "CCCD 订阅请求 value=${value.toHex()}")
             if (responseNeeded) {
                 gattServer?.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, null)
             }

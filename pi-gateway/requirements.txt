@@ -1,0 +1,4 @@
+bleak>=0.22.0
+paho-mqtt>=2.1.0
+sense-emu>=1.2
+gpiozero>=2.0

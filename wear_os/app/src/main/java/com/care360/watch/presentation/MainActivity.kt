@@ -21,10 +21,10 @@ import androidx.wear.compose.material3.Text
 import com.care360.watch.CollectorService
 import com.care360.watch.presentation.theme.Wear_osTheme
 
-// BODY_SENSORS 在 Samsung Wear OS 上平台自动授权，不出现在用户权限列表里，无需运行时申请
 private val REQUIRED_PERMISSIONS = arrayOf(
     Manifest.permission.BLUETOOTH_CONNECT,
     Manifest.permission.BLUETOOTH_ADVERTISE,
+    "android.permission.health.READ_HEART_RATE",
 )
 
 class MainActivity : ComponentActivity() {

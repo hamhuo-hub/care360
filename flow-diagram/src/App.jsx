@@ -88,12 +88,12 @@ const initialNodes = [
   },
 
   // ── 采集层子节点 ──
-  { id: 'bracelet', data: { label: '三星 Galaxy Watch\nSensorManager 原始读数\nHEART_RATE · ACCELEROMETER\n微批 5s → JSON 打包' }, style: { background: '#388E3C', color: '#fff', border: 'none', fontSize: 11, textAlign: 'center' }, parentId: 'group-collect', extent: 'parent', position: { x: 20, y: 110 } },
+  { id: 'bracelet', data: { label: 'Watch (samsung R870)\n(Heart Rate/Accelerometer)' }, style: { background: '#388E3C', color: '#fff', border: 'none', fontSize: 11, textAlign: 'center' }, parentId: 'group-collect', extent: 'parent', position: { x: 20, y: 110 } },
 
   // ── 树莓派六个子模块（左列=采集，中=聚合，右列=处理/上报）──
-  { id: 'pi-collect',     data: { label: '① BLE 穿戴采集\nSensorEvent 原始字节流\naccuracy / offset_ms 透传' },   style: { background: '#00796B', color: '#fff', border: 'none', fontSize: 11 }, parentId: 'group-pi', extent: 'parent', position: { x: 20,  y: 60  } },
+  { id: 'pi-collect',     data: { label: '① BLE 穿戴采集' },   style: { background: '#00796B', color: '#fff', border: 'none', fontSize: 11 }, parentId: 'group-pi', extent: 'parent', position: { x: 20,  y: 60  } },
   { id: 'pi-env-collect', data: { label: '② 环境传感采集\n温湿度 / 火焰检测' },   style: { background: '#00796B', color: '#fff', border: 'none', fontSize: 11 }, parentId: 'group-pi', extent: 'parent', position: { x: 20,  y: 210 } },
-  { id: 'pi-clean',       data: { label: '③ Schema 标准化封包\n(清洗 / 算法已移至云端)' },    style: { background: '#00796B', color: '#fff', border: 'none', fontSize: 11 }, parentId: 'group-pi', extent: 'parent', position: { x: 210, y: 130 } },
+  { id: 'pi-clean',       data: { label: '③ Schema 标准化封包' },    style: { background: '#00796B', color: '#fff', border: 'none', fontSize: 11 }, parentId: 'group-pi', extent: 'parent', position: { x: 210, y: 130 } },
   { id: 'pi-local-alert', data: { label: '④ 本地告警\n阈值判断' }, style: { background: '#E65100', color: '#fff', border: 'none', fontSize: 11 }, parentId: 'group-pi', extent: 'parent', position: { x: 410, y: 60 } },
   // pi-upload 作为 Group，内部包含缓存子节点
   { id: 'pi-upload', type: 'resizableGroup', data: { label: '⑤ 异常打包上报' }, style: { width: 160, height: 130, background: 'rgba(230,81,0,0.12)', border: '2px solid #E65100', borderRadius: 6, fontSize: 11 }, parentId: 'group-pi', extent: 'parent', position: { x: 410, y: 180 } },
@@ -110,7 +110,7 @@ const initialNodes = [
 
   // ── 告警层 ──
   { id: 'sms',        data: { label: 'SMS 短信推送' },        style: { background: '#C62828', color: '#fff', border: 'none', fontSize: 11 }, parentId: 'group-alert', extent: 'parent', position: { x: 60,  y: 60 } },
-  { id: 'albany',     data: { label: '社区汇总大屏' },        style: { background: '#C62828', color: '#fff', border: 'none', fontSize: 11 }, parentId: 'group-alert', extent: 'parent', position: { x: 500, y: 60 } },
+  { id: 'albany',     data: { label: '社区监控屏' },        style: { background: '#C62828', color: '#fff', border: 'none', fontSize: 11 }, parentId: 'group-alert', extent: 'parent', position: { x: 500, y: 60 } },
 ];
 
 const initialEdges = [

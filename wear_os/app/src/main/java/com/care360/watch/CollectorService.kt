@@ -68,18 +68,20 @@ class CollectorService : Service() {
 
     private fun startBatchLoop() {
         scope.launch {
+            // 丢弃启动期间积累的读数，保证第一个批次窗口也是干净的 5 秒
+            sensorManager.drainReadings()
             while (isActive) {
                 delay(BATCH_INTERVAL_MS)
 
                 // Pi 未连接时跳过序列化，节省 CPU
                 if (!bleServer.isConnected()) continue
 
-                val readings = sensorManager.drainReadings()
+                val (windowStart, readings) = sensorManager.drainReadings()
                 if (readings.isEmpty()) continue
 
                 val batch = TelemetryBatch(
                     deviceId     = DEVICE_ID,
-                    sysTimestamp = System.currentTimeMillis(),
+                    sysTimestamp = windowStart,   // 批次窗口起点，offset_ms 从此处计算
                     payload      = readings,
                 )
 

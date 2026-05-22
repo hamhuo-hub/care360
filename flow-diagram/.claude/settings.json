@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ssh root@192.168.5.4 \"cd /root/care360/pi-gateway && pip3 install -r requirements.txt 2>&1\")",
+      "Bash(ssh root@192.168.5.4 \"cd /root/care360/pi-gateway && python3 -m venv .venv && .venv/bin/pip install -r requirements.txt 2>&1\")",
+      "Bash(ssh root@192.168.5.4 \"/root/care360/pi-gateway/.venv/bin/python3 -c \\\\\"import bleak, paho.mqtt.client, sense_emu, gpiozero; print\\('all imports OK'\\)\\\\\" 2>&1\")",
+      "Bash(rsync -av --exclude '__pycache__' --exclude '.venv' /home/hamhuo/Documents/GitHub/care360/pi-gateway/ root@192.168.5.4:/root/care360/pi-gateway/)",
+      "Bash(ssh root@192.168.5.4 \"DISPLAY=:0 sense_emu_gui &\")",
+      "Bash(ssh root@192.168.5.4 \"pgrep -x sense_emu_gui && echo 'GUI started'\")",
+      "Bash(rsync -av --exclude '__pycache__' --exclude '.venv' --exclude 'care360.log' /home/hamhuo/Documents/GitHub/care360/pi-gateway/ root@192.168.5.4:/root/care360/pi-gateway/)",
+      "Bash(rsync -av --exclude '__pycache__' --exclude '.venv' --exclude '*.log' /home/hamhuo/Documents/GitHub/care360/pi-gateway/ root@192.168.5.4:/root/care360/pi-gateway/)"
+    ]
+  }
+}
