@@ -76,7 +76,7 @@ const initialNodes = [
     id: 'group-aws',
     type: 'resizableGroup',
     position: { x: -30, y: 450 },
-    style: { width: 780, height: 340, backgroundColor: 'rgba(33,150,243,0.06)', border: '2px solid #2196F3', borderRadius: 8 },
+    style: { width: 780, height: 370, backgroundColor: 'rgba(33,150,243,0.06)', border: '2px solid #2196F3', borderRadius: 8 },
     data: { label: 'AWS 云端处理矩阵' },
   },
   {
@@ -88,24 +88,24 @@ const initialNodes = [
   },
 
   // ── 采集层子节点 ──
-  { id: 'bracelet', data: { label: '三星 Galaxy Watch\n心率 / GPS / 陀螺仪' }, style: { background: '#388E3C', color: '#fff', border: 'none', fontSize: 11, textAlign: 'center' }, parentId: 'group-collect', extent: 'parent', position: { x: 20, y: 140 } },
+  { id: 'bracelet', data: { label: '三星 Galaxy Watch\nSensorManager 原始读数\nHEART_RATE · ACCELEROMETER\n微批 5s → JSON 打包' }, style: { background: '#388E3C', color: '#fff', border: 'none', fontSize: 11, textAlign: 'center' }, parentId: 'group-collect', extent: 'parent', position: { x: 20, y: 110 } },
 
   // ── 树莓派六个子模块（左列=采集，中=聚合，右列=处理/上报）──
-  { id: 'pi-collect',     data: { label: '① BLE 穿戴采集\nGalaxy Watch 数据' },   style: { background: '#00796B', color: '#fff', border: 'none', fontSize: 11 }, parentId: 'group-pi', extent: 'parent', position: { x: 20,  y: 60  } },
+  { id: 'pi-collect',     data: { label: '① BLE 穿戴采集\nSensorEvent 原始字节流\naccuracy / offset_ms 透传' },   style: { background: '#00796B', color: '#fff', border: 'none', fontSize: 11 }, parentId: 'group-pi', extent: 'parent', position: { x: 20,  y: 60  } },
   { id: 'pi-env-collect', data: { label: '② 环境传感采集\n温湿度 / 火焰检测' },   style: { background: '#00796B', color: '#fff', border: 'none', fontSize: 11 }, parentId: 'group-pi', extent: 'parent', position: { x: 20,  y: 210 } },
-  { id: 'pi-clean',       data: { label: '③ 清洗与聚合\nJSON Schema 标准化' },    style: { background: '#00796B', color: '#fff', border: 'none', fontSize: 11 }, parentId: 'group-pi', extent: 'parent', position: { x: 210, y: 130 } },
+  { id: 'pi-clean',       data: { label: '③ Schema 标准化封包\n(清洗 / 算法已移至云端)' },    style: { background: '#00796B', color: '#fff', border: 'none', fontSize: 11 }, parentId: 'group-pi', extent: 'parent', position: { x: 210, y: 130 } },
   { id: 'pi-local-alert', data: { label: '④ 本地告警\n阈值判断' }, style: { background: '#E65100', color: '#fff', border: 'none', fontSize: 11 }, parentId: 'group-pi', extent: 'parent', position: { x: 410, y: 60 } },
   // pi-upload 作为 Group，内部包含缓存子节点
   { id: 'pi-upload', type: 'resizableGroup', data: { label: '⑤ 异常打包上报' }, style: { width: 160, height: 130, background: 'rgba(230,81,0,0.12)', border: '2px solid #E65100', borderRadius: 6, fontSize: 11 }, parentId: 'group-pi', extent: 'parent', position: { x: 410, y: 180 } },
   { id: 'pi-cache', data: { label: '数据缓存\nLocal Buffer' }, style: { background: '#4E342E', color: '#fff', border: 'none', fontSize: 10 }, parentId: 'pi-upload', extent: 'parent', position: { x: 15, y: 50 } },
 
   // ── MQTT（独立节点，连接采集层与云端）──
-  { id: 'mqtt', data: { label: 'MQTT 协议\ntelemetry/health/#' }, position: { x: 230, y: 415 }, style: { background: '#1565C0', color: '#fff', border: 'none', fontSize: 11 } },
+  { id: 'mqtt', data: { label: 'MQTT over TLS\ntelemetry/health/{device_id}\n微批 JSON · QoS 1' }, position: { x: 220, y: 415 }, style: { background: '#1565C0', color: '#fff', border: 'none', fontSize: 11, textAlign: 'center' } },
 
   // ── AWS 云端层（左侧垂直链：IoT Core → Rules；右侧：Lambda + DynamoDB）──
   { id: 'iot-core',  data: { label: 'AWS IoT Core\nX.509 证书认证' },   style: { background: '#1976D2', color: '#fff', border: 'none', fontSize: 11 }, parentId: 'group-aws', extent: 'parent', position: { x: 80,  y: 60  } },
   { id: 'iot-rules', data: { label: 'IoT Rules Engine\nSQL 路由拦截' }, style: { background: '#1976D2', color: '#fff', border: 'none', fontSize: 11 }, parentId: 'group-aws', extent: 'parent', position: { x: 80,  y: 200 } },
-  { id: 'lambda',    data: { label: 'AWS Lambda\n实时分析 / 异常标记' }, style: { background: '#1976D2', color: '#fff', border: 'none', fontSize: 11 }, parentId: 'group-aws', extent: 'parent', position: { x: 380, y: 200 } },
+  { id: 'lambda',    data: { label: 'AWS Lambda\n① 精度过滤 (accuracy<2 丢弃)\n② 时序还原 (sys_ts + offset_ms)\n③ 算法分析 / 异常标记' }, style: { background: '#1976D2', color: '#fff', border: 'none', fontSize: 11 }, parentId: 'group-aws', extent: 'parent', position: { x: 370, y: 180 } },
   { id: 'dynamodb',  data: { label: 'DynamoDB\n时序数据高吞吐写入' },   style: { background: '#1976D2', color: '#fff', border: 'none', fontSize: 11 }, parentId: 'group-aws', extent: 'parent', position: { x: 570, y: 60  } },
 
   // ── 告警层 ──
