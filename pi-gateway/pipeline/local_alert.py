@@ -12,7 +12,8 @@ class AlertDetector:
     """
 
     def __init__(self):
-        self._hr_anomaly_streak = 0   # 当前连续心率异常计数
+        self._hr_anomaly_streak = 0
+        self._flame_active = False    # 火焰持续中不重复报警
 
     def check(self, readings: list[dict]) -> list[dict]:
         alerts = []
@@ -21,13 +22,18 @@ class AlertDetector:
                 alert = self._check_hr(r)
                 if alert:
                     alerts.append(alert)
-            elif r["sensor"] == "ENV" and r.get("flame_detected"):
-                alerts.append({
-                    "type":      "FLAME_DETECTED",
-                    "device_id": r["device_id"],
-                    "timestamp": r["timestamp"],
-                })
-                logger.warning("火焰报警！device=%s", r["device_id"])
+            elif r["sensor"] == "ENV":
+                flame = r.get("flame_detected", False)
+                if flame and not self._flame_active:
+                    self._flame_active = True
+                    alerts.append({
+                        "type":      "FLAME_DETECTED",
+                        "device_id": r["device_id"],
+                        "timestamp": r["timestamp"],
+                    })
+                    logger.warning("火焰报警！device=%s", r["device_id"])
+                elif not flame:
+                    self._flame_active = False   # 火焰消失，重置
         return alerts
 
     # ── 私有 ────────────────────────────────────────────────────────────

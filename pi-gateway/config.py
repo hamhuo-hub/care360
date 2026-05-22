@@ -7,7 +7,7 @@ BLE_CHAR_UUID    = "12345678-1234-1234-1234-123456789def"
 BLE_SCAN_TIMEOUT = 30.0
 
 HR_LOW_BPM             = 45
-HR_HIGH_BPM            = 120
+HR_HIGH_BPM            = 75   # 测试用，正式值改回 120
 HR_ANOMALY_CONSECUTIVE = 3    # 连续 N 条超阈值才报警
 
 IOT_ENDPOINT = os.getenv("IOT_ENDPOINT", "")

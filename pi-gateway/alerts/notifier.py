@@ -1,8 +1,10 @@
 import io
 import logging
 import math
+import os
 import struct
 import subprocess
+import tempfile
 import threading
 import wave
 
@@ -56,16 +58,21 @@ class LocalNotifier:
 
     def _beep(self):
         if not self._playing.acquire(blocking=False):
-            return   # 已经在响，跳过
+            return
         try:
-            proc = subprocess.Popen(
-                ["aplay", "-q", "-"],
-                stdin=subprocess.PIPE,
-                stderr=subprocess.DEVNULL,
-            )
-            proc.communicate(input=_WAV_BYTES, timeout=_DURATION_S + 1)
-        except FileNotFoundError:
-            logger.warning("aplay 未找到，无法播放报警音（Pi 上请确认 alsa-utils 已安装）")
+            # 写临时文件，避免 PipeWire/aplay 管道卡死
+            with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as f:
+                f.write(_WAV_BYTES)
+                tmp = f.name
+            try:
+                subprocess.run(["aplay", "-q", tmp],
+                               timeout=_DURATION_S + 2, stderr=subprocess.DEVNULL)
+            except FileNotFoundError:
+                logger.warning("aplay 未找到")
+            except subprocess.TimeoutExpired:
+                logger.warning("播放超时")
+            finally:
+                os.unlink(tmp)
         except Exception as exc:
             logger.warning("播放报警音失败: %s", exc)
         finally:

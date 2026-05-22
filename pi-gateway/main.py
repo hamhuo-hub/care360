@@ -45,6 +45,10 @@ def main():
         # 1. 精度过滤 + 时序还原
         readings = unpack(batch)
 
+        # 2. 追加环境读数
+        env_data = env.read()
+        readings.append(make_env_reading(env_data, config.DEVICE_ID))
+
         # 控制台打印每条读数详情
         for r in readings:
             if r["sensor"] == "HEART_RATE":
@@ -54,10 +58,8 @@ def main():
                 logger.info("[ACC] x=%.2f y=%.2f z=%.2f  ts=%d", v[0], v[1], v[2], r["timestamp"])
             elif r["sensor"] == "ENV":
                 logger.info("[ENV] temp=%.1f°C  humidity=%.1f%%  flame=%s",
-                            r.get("temperature_c", 0), r.get("humidity_pct", 0), r.get("flame_detected"))
-
-        # 2. 追加环境读数
-        readings.append(make_env_reading(env.read(), config.DEVICE_ID))
+                            r.get("temperature_c", 0), r.get("humidity_pct", 0),
+                            r.get("flame_detected"))
 
         # 3. 本地异常检测
         alerts = detector.check(readings)
