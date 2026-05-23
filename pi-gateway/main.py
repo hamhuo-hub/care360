@@ -57,9 +57,9 @@ def main():
                 v = r.get("values", [0, 0, 0])
                 logger.info("[ACC] x=%.2f y=%.2f z=%.2f  ts=%d", v[0], v[1], v[2], r["timestamp"])
             elif r["sensor"] == "ENV":
-                logger.info("[ENV] temp=%.1f°C  humidity=%.1f%%  flame=%s",
+                logger.info("[ENV] temp=%.1f°C  humidity=%.1f%%  pressure=%.1fhPa  flame=%s",
                             r.get("temperature_c", 0), r.get("humidity_pct", 0),
-                            r.get("flame_detected"))
+                            r.get("pressure_hpa", 0), r.get("flame_detected"))
 
         # 3. 本地异常检测
         alerts = detector.check(readings)

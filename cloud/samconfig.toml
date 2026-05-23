@@ -1,0 +1,23 @@
+# SAM deployment configuration
+# Fill in the values below, then run: ./deploy.sh
+
+version = 0.1
+
+[default.build.parameters]
+cached = true
+parallel = true
+
+[default.deploy.parameters]
+stack_name          = "care360-cloud"
+region              = "ap-southeast-2"        # change to your AWS region
+capabilities        = "CAPABILITY_IAM"
+confirm_changeset   = true
+resolve_s3          = true                    # SAM auto-creates an S3 bucket
+
+# Override these via environment variables or edit directly:
+parameter_overrides = "NotificationEmail=\"hamhuo@outlook.com\" NotificationPhone=\"+64223424784\""
+s3_prefix = "care360-cloud"
+image_repositories = []
+
+[default.global.parameters]
+region = "ap-southeast-2"

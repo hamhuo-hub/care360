@@ -1,0 +1,111 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Description: Care360 AWS Cloud Layer — Alert Processing Pipeline
+
+Parameters:
+  NotificationEmail:
+    Type: String
+    Description: Community centre email address for alert notifications
+
+Globals:
+  Function:
+    Runtime: python3.12
+    Timeout: 30
+    MemorySize: 128
+
+Resources:
+
+  # ── DynamoDB ────────────────────────────────────────────────────────────────
+
+  AlertTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: care360-alerts
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: device_id
+          AttributeType: S
+        - AttributeName: timestamp
+          AttributeType: N
+      KeySchema:
+        - AttributeName: device_id
+          KeyType: HASH
+        - AttributeName: timestamp
+          KeyType: RANGE
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+
+  # ── SNS ─────────────────────────────────────────────────────────────────────
+
+  AlertTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: care360-alerts
+
+  EmailSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      TopicArn: !Ref AlertTopic
+      Protocol: email
+      Endpoint: !Ref NotificationEmail
+
+  # ── Lambda ──────────────────────────────────────────────────────────────────
+
+  AlertFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: care360-alert-handler
+      CodeUri: lambda/alert_handler/
+      Handler: handler.handler
+      Environment:
+        Variables:
+          DYNAMODB_TABLE: !Ref AlertTable
+          SNS_TOPIC_ARN: !Ref AlertTopic
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref AlertTable
+        - SNSPublishMessagePolicy:
+            TopicName: !GetAtt AlertTopic.TopicName
+
+  # Allow IoT Rules Engine to invoke Lambda
+  AlertFunctionIoTPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt AlertFunction.Arn
+      Action: lambda:InvokeFunction
+      Principal: iot.amazonaws.com
+      SourceArn: !Sub "arn:aws:iot:${AWS::Region}:${AWS::AccountId}:rule/care360AlertRule"
+
+  # ── IoT Rules Engine ────────────────────────────────────────────────────────
+
+  IoTAlertRule:
+    Type: AWS::IoT::TopicRule
+    Properties:
+      RuleName: care360AlertRule
+      TopicRulePayload:
+        # Forward every message on alerts/health/+ to Lambda
+        Sql: "SELECT * FROM 'alerts/health/+'"
+        AwsIotSqlVersion: "2016-03-23"
+        RuleDisabled: false
+        Actions:
+          - Lambda:
+              FunctionArn: !GetAtt AlertFunction.Arn
+
+Outputs:
+  AlertTableName:
+    Description: DynamoDB table storing alert history
+    Value: !Ref AlertTable
+
+  AlertTopicArn:
+    Description: SNS topic ARN — subscribe additional endpoints here
+    Value: !Ref AlertTopic
+
+  AlertFunctionArn:
+    Description: Lambda function ARN
+    Value: !GetAtt AlertFunction.Arn
+
+  IoTRuleName:
+    Description: IoT Rules Engine rule name
+    Value: !Ref IoTAlertRule

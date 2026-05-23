@@ -85,7 +85,7 @@ const initialNodes = [
     data: { label: 'Community Centre' },
   },
 
-  { id: 'bracelet', data: { label: 'Watch (samsung R870)\n(Heart Rate/Accelerometer)' }, style: { background: '#388E3C', color: '#fff', border: 'none', fontSize: 11, textAlign: 'center' }, parentId: 'group-collect', extent: 'parent', position: { x: 20, y: 110 } },
+  { id: 'bracelet', data: { label: 'Watch (samsung R870)' }, style: { background: '#388E3C', color: '#fff', border: 'none', fontSize: 11, textAlign: 'center' }, parentId: 'group-collect', extent: 'parent', position: { x: 20, y: 110 } },
 
   { id: 'pi-collect',     data: { label: '① BLE Wearable Rx' },   style: { background: '#00796B', color: '#fff', border: 'none', fontSize: 11 }, parentId: 'group-pi', extent: 'parent', position: { x: 20,  y: 60  } },
   { id: 'pi-env-collect', data: { label: '② Env Sensors\nTemp / Humidity / Flame' },   style: { background: '#00796B', color: '#fff', border: 'none', fontSize: 11 }, parentId: 'group-pi', extent: 'parent', position: { x: 20,  y: 210 } },

@@ -1,6 +1,5 @@
 import json
 import logging
-import ssl
 import paho.mqtt.client as mqtt
 import config
 
@@ -17,6 +16,7 @@ class IotPublisher:
 
     def __init__(self):
         self._client = mqtt.Client(
+            callback_api_version=mqtt.CallbackAPIVersion.VERSION1,
             client_id=config.DEVICE_ID,
             clean_session=False,
         )
@@ -28,7 +28,6 @@ class IotPublisher:
             ca_certs=config.CA_PATH,
             certfile=config.CERT_PATH,
             keyfile=config.KEY_PATH,
-            tls_version=ssl.PROTOCOL_TLSv1_2,
         )
         self._client.connect(config.IOT_ENDPOINT, port=8883, keepalive=60)
         self._client.loop_start()

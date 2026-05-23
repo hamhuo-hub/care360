@@ -1,0 +1,2 @@
+# boto3 is provided by the Lambda runtime; only list it for local dev/testing
+boto3>=1.34
