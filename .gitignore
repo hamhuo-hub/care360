@@ -17,3 +17,5 @@ local.properties
 /cloud/.aws-sam
 /cloud/aws/dist
 /cloud/.claude
+/dashboard/backend/.venv
+/dashboard/frontend/node_modules

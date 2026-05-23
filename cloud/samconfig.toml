@@ -11,13 +11,11 @@ parallel = true
 stack_name          = "care360-cloud"
 region              = "ap-southeast-2"        # change to your AWS region
 capabilities        = "CAPABILITY_IAM"
-confirm_changeset   = true
+confirm_changeset   = false
 resolve_s3          = true                    # SAM auto-creates an S3 bucket
 
 # Override these via environment variables or edit directly:
-parameter_overrides = "NotificationEmail=\"hamhuo@outlook.com\" NotificationPhone=\"+64223424784\""
-s3_prefix = "care360-cloud"
-image_repositories = []
-
-[default.global.parameters]
-region = "ap-southeast-2"
+parameter_overrides = [
+  "NotificationEmail=community@example.com",  # <-- replace
+  "NotificationPhone=+8613082028672",           # <-- replace or leave blank
+]

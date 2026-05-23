@@ -1,0 +1,32 @@
+import { useState } from 'react'
+import NormalPage from './pages/NormalPage'
+import DebugPage from './pages/DebugPage'
+
+export default function App() {
+  const [mode, setMode] = useState('normal')
+
+  return (
+    <div className="app">
+      <header className="header">
+        <div className="header-left">
+          <span className="logo">Care360</span>
+          <span className="subtitle">社区护理监控系统</span>
+        </div>
+        <div className="tab-group">
+          <button className={`tab ${mode === 'normal' ? 'active' : ''}`}
+            onClick={() => setMode('normal')}>
+            正常界面
+          </button>
+          <button className={`tab ${mode === 'debug' ? 'active' : ''}`}
+            onClick={() => setMode('debug')}>
+            Debug 开发
+          </button>
+        </div>
+      </header>
+
+      <main className="main">
+        {mode === 'normal' ? <NormalPage /> : <DebugPage />}
+      </main>
+    </div>
+  )
+}

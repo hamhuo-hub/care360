@@ -10,7 +10,8 @@
       "Bash(rsync -av --exclude '__pycache__' --exclude '.venv' --exclude 'care360.log' /home/hamhuo/Documents/GitHub/care360/pi-gateway/ root@192.168.5.4:/root/care360/pi-gateway/)",
       "Bash(rsync -av --exclude '__pycache__' --exclude '.venv' --exclude '*.log' /home/hamhuo/Documents/GitHub/care360/pi-gateway/ root@192.168.5.4:/root/care360/pi-gateway/)",
       "Bash(python3 -)",
-      "Bash(chmod +x /home/hamhuo/Documents/GitHub/care360/cloud/deploy.sh)"
+      "Bash(chmod +x /home/hamhuo/Documents/GitHub/care360/cloud/deploy.sh)",
+      "Bash(chmod +x /home/hamhuo/Documents/GitHub/care360/dashboard/start.sh)"
     ]
   }
 }
