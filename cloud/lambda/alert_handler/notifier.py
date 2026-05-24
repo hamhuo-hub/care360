@@ -26,16 +26,35 @@ def dispatch(alert: dict, severity: int):
     label = _SEVERITY_LABEL.get(severity, "UNKNOWN")
     device = alert["device_id"]
 
-    if alert["type"] == "HEART_RATE_ANOMALY":
+    t = alert["type"]
+    if t == "HEART_RATE_ANOMALY":
         bpm = alert.get("bpm", 0)
         body = (
             f"[Care360 {label}] Abnormal heart rate on {device}: {bpm:.1f} BPM. "
             "Please check on the resident immediately."
         )
-    elif alert["type"] == "FLAME_DETECTED":
+    elif t == "FLAME_DETECTED":
         body = (
             f"[Care360 {label}] Flame detected on device {device}! "
             "Dispatch emergency services immediately."
+        )
+    elif t == "TEMPERATURE_ANOMALY":
+        val = alert.get("value", 0)
+        body = (
+            f"[Care360 {label}] Abnormal temperature on {device}: {val:.1f}°C. "
+            "Please check the environment."
+        )
+    elif t == "HUMIDITY_ANOMALY":
+        val = alert.get("value", 0)
+        body = (
+            f"[Care360 {label}] Abnormal humidity on {device}: {val:.1f}%. "
+            "Please check the environment."
+        )
+    elif t == "PRESSURE_ANOMALY":
+        val = alert.get("value", 0)
+        body = (
+            f"[Care360 {label}] Abnormal air pressure on {device}: {val:.1f} hPa. "
+            "Severe weather conditions may be present."
         )
     else:
         body = f"[Care360 {label}] Alert '{alert['type']}' from {device}."

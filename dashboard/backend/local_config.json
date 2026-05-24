@@ -1,0 +1,11 @@
+{
+  "thresholds": {
+    "hr_low_bpm": 45,
+    "hr_high_bpm": 50,
+    "hr_anomaly_consecutive": 3
+  },
+  "templates": {
+    "HEART_RATE_ANOMALY": "[Care360 {severity}] Abnormal heart rate on {device_id}: {bpm:.1f} BPM. Please check on the resident immediately.",
+    "FLAME_DETECTED": "[Care360 {severity}] Flame detected on device {device_id}! Dispatch emergency services immediately."
+  }
+}

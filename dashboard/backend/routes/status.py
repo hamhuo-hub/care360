@@ -63,7 +63,7 @@ def device_status():
         "pi": pi,
         "watch": {
             "status": "ACTIVE" if pi.get("status") == "ACTIVE" else "UNKNOWN",
-            "note": "BLE-only — 通过 Pi 最近数据推断连接状态",
+            "note": "BLE-only — activity inferred from Pi heartbeat",
         },
     }
 

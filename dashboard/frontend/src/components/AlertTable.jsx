@@ -2,15 +2,15 @@ import { useState, useEffect, useCallback } from 'react'
 import { api } from '../api'
 
 const SEV_COLOR = { 1: '#38a169', 2: '#d69e2e', 3: '#e53e3e' }
-const SEV_LABEL = { 1: '低', 2: '中', 3: '严重' }
+const SEV_LABEL = { 1: 'Low', 2: 'Medium', 3: 'Critical' }
 
 function fmtTime(ms) {
-  return new Date(Number(ms)).toLocaleString('zh-CN', { hour12: false })
+  return new Date(Number(ms)).toLocaleString('en-AU', { hour12: false })
 }
 
 function fmtType(t) {
-  if (t === 'HEART_RATE_ANOMALY') return '心率异常'
-  if (t === 'FLAME_DETECTED') return '火焰检测'
+  if (t === 'HEART_RATE_ANOMALY') return 'Heart Rate Anomaly'
+  if (t === 'FLAME_DETECTED') return 'Flame Detected'
   return t
 }
 
@@ -43,23 +43,23 @@ export default function AlertTable() {
   return (
     <div className="card" style={{ flex: 2, minWidth: 0 }}>
       <div className="card-header">
-        <h2>告警日志</h2>
+        <h2>Alert Log</h2>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
           <input
             className="input"
             style={{ width: 140 }}
-            placeholder="设备 ID 筛选"
+            placeholder="Filter by Device ID"
             value={deviceFilter}
             onChange={e => setDeviceFilter(e.target.value)}
           />
-          <select className="input" style={{ width: 120 }} value={typeFilter}
+          <select className="input" style={{ width: 160 }} value={typeFilter}
             onChange={e => setTypeFilter(e.target.value)}>
-            <option value="">全部类型</option>
-            <option value="HEART_RATE_ANOMALY">心率异常</option>
-            <option value="FLAME_DETECTED">火焰检测</option>
+            <option value="">All Types</option>
+            <option value="HEART_RATE_ANOMALY">Heart Rate Anomaly</option>
+            <option value="FLAME_DETECTED">Flame Detected</option>
           </select>
           <button className="btn" onClick={load} disabled={loading}>
-            {loading ? '加载中…' : '刷新'}
+            {loading ? 'Loading…' : 'Refresh'}
           </button>
         </div>
       </div>
@@ -70,18 +70,18 @@ export default function AlertTable() {
         <table className="table">
           <thead>
             <tr>
-              <th>时间</th>
-              <th>设备 ID</th>
-              <th>类型</th>
-              <th>严重度</th>
-              <th>心率 (BPM)</th>
+              <th>Time</th>
+              <th>Device ID</th>
+              <th>Type</th>
+              <th>Severity</th>
+              <th>Heart Rate (BPM)</th>
             </tr>
           </thead>
           <tbody>
             {!loading && alerts.length === 0 && (
               <tr>
                 <td colSpan={5} style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: 40 }}>
-                  暂无告警记录
+                  No alert records found
                 </td>
               </tr>
             )}
@@ -104,7 +104,7 @@ export default function AlertTable() {
       </div>
 
       <div style={{ padding: '8px 16px', fontSize: 12, color: 'var(--text-secondary)' }}>
-        共 {alerts.length} 条记录
+        {alerts.length} record{alerts.length !== 1 ? 's' : ''}
       </div>
     </div>
   )

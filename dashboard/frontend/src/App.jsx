@@ -10,16 +10,16 @@ export default function App() {
       <header className="header">
         <div className="header-left">
           <span className="logo">Care360</span>
-          <span className="subtitle">社区护理监控系统</span>
+          <span className="subtitle">Community Care Monitoring</span>
         </div>
         <div className="tab-group">
           <button className={`tab ${mode === 'normal' ? 'active' : ''}`}
             onClick={() => setMode('normal')}>
-            正常界面
+            Dashboard
           </button>
           <button className={`tab ${mode === 'debug' ? 'active' : ''}`}
             onClick={() => setMode('debug')}>
-            Debug 开发
+            Debug
           </button>
         </div>
       </header>

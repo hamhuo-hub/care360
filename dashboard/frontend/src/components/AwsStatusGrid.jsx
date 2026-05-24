@@ -9,7 +9,7 @@ function StatusCard({ name, label, info }) {
       <div className="status-card" style={{ color: 'var(--text-secondary)' }}>
         <div className="status-icon">⏳</div>
         <div className="status-name">{label}</div>
-        <div className="status-detail">加载中…</div>
+        <div className="status-detail">Loading…</div>
       </div>
     )
   }
@@ -23,9 +23,9 @@ function StatusCard({ name, label, info }) {
       <div className="status-name">{label}</div>
       <div className="status-detail">
         <strong>{info.status}</strong>
-        {info.item_count != null && <><br />{info.item_count.toLocaleString()} 条记录</>}
+        {info.item_count != null && <><br />{info.item_count.toLocaleString()} records</>}
         {info.last_modified && (
-          <><br />{new Date(info.last_modified).toLocaleDateString('zh-CN')}</>
+          <><br />{new Date(info.last_modified).toLocaleDateString('en-AU')}</>
         )}
         {info.topic_arn && (
           <><br /><span style={{ fontSize: 10, wordBreak: 'break-all' }}>
@@ -72,9 +72,9 @@ export default function AwsStatusGrid() {
   return (
     <div className="card">
       <div className="card-header">
-        <h2>AWS 组件状态</h2>
+        <h2>AWS Component Status</h2>
         <button className="btn" onClick={load} disabled={loading}>
-          {loading ? '检查中…' : '刷新'}
+          {loading ? 'Checking…' : 'Refresh'}
         </button>
       </div>
       <div className="status-grid">

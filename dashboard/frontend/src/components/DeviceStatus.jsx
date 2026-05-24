@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react'
 import { api } from '../api'
 
 function fmtAgo(secs) {
-  if (secs < 60)   return `${secs} 秒前`
-  if (secs < 3600) return `${Math.floor(secs / 60)} 分钟前`
-  return `${Math.floor(secs / 3600)} 小时前`
+  if (secs < 60)   return `${secs}s ago`
+  if (secs < 3600) return `${Math.floor(secs / 60)}m ago`
+  return `${Math.floor(secs / 3600)}h ago`
 }
 
 function DeviceCard({ icon, title, info }) {
@@ -22,7 +22,7 @@ function DeviceCard({ icon, title, info }) {
             {info.status}
           </span>
         ) : (
-          <span style={{ color: 'var(--text-secondary)', fontSize: 13 }}>加载中…</span>
+          <span style={{ color: 'var(--text-secondary)', fontSize: 13 }}>Loading…</span>
         )}
       </div>
       {info?.device_id && (
@@ -30,7 +30,7 @@ function DeviceCard({ icon, title, info }) {
       )}
       {info?.last_seen_seconds_ago != null && (
         <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
-          最后上报：{fmtAgo(info.last_seen_seconds_ago)}
+          Last seen: {fmtAgo(info.last_seen_seconds_ago)}
         </div>
       )}
       {info?.note && (
@@ -64,14 +64,12 @@ export default function DeviceStatus() {
     }
   }
 
-  // 30s 轮询
   useEffect(() => {
     load()
     const poll = setInterval(load, POLL_INTERVAL)
     return () => clearInterval(poll)
   }, [])
 
-  // 倒计时显示（每秒 -1）
   useEffect(() => {
     const tick = setInterval(() => {
       setCountdown(c => (c > 0 ? c - 1 : 0))
@@ -82,15 +80,15 @@ export default function DeviceStatus() {
   return (
     <div className="card">
       <div className="card-header">
-        <h2>设备活跃状态</h2>
+        <h2>Device Status</h2>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
             {lastPolled
-              ? `上次查询 ${lastPolled.toLocaleTimeString('zh-CN', { hour12: false })} · ${countdown}s 后刷新`
-              : '查询中…'}
+              ? `Last checked ${lastPolled.toLocaleTimeString('en-AU', { hour12: false })} · refresh in ${countdown}s`
+              : 'Checking…'}
           </span>
           <button className="btn" onClick={load} disabled={loading}>
-            {loading ? '检查中…' : '立即刷新'}
+            {loading ? 'Checking…' : 'Refresh Now'}
           </button>
         </div>
       </div>

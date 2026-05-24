@@ -19,6 +19,7 @@ export const api = {
   thresholds: {
     get: () => request('/thresholds'),
     set: (body) => request('/thresholds', { method: 'PUT', body: JSON.stringify(body) }),
+    shadow: () => request('/thresholds/shadow'),
   },
   templates: {
     get: () => request('/templates'),

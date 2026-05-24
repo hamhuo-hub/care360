@@ -1,6 +1,13 @@
 import re
 
-VALID_TYPES = {"HEART_RATE_ANOMALY", "FLAME_DETECTED"}
+VALID_TYPES = {
+    "HEART_RATE_ANOMALY",
+    "FLAME_DETECTED",
+    "TEMPERATURE_ANOMALY",
+    "HUMIDITY_ANOMALY",
+    "PRESSURE_ANOMALY",
+}
+_ENV_ANOMALY_TYPES = {"TEMPERATURE_ANOMALY", "HUMIDITY_ANOMALY", "PRESSURE_ANOMALY"}
 _DEVICE_ID_RE = re.compile(r"^gw4_[a-z]+_\d+$")
 
 
@@ -23,3 +30,8 @@ def validate_alert(alert: dict):
         bpm = alert.get("bpm")
         if bpm is None or not isinstance(bpm, (int, float)):
             raise ValueError("HEART_RATE_ANOMALY requires a numeric bpm field")
+
+    if alert["type"] in _ENV_ANOMALY_TYPES:
+        val = alert.get("value")
+        if val is None or not isinstance(val, (int, float)):
+            raise ValueError(f"{alert['type']} requires a numeric value field")
