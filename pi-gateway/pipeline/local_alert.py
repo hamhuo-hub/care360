@@ -6,9 +6,9 @@ logger = logging.getLogger(__name__)
 
 class AlertDetector:
     """
-    有状态的异常检测器。
-    心率需要连续 HR_ANOMALY_CONSECUTIVE 条读数超阈值才触发，防单点误报。
-    火焰检测单次即触发（火情不等人）。
+    detect alerts based on incoming sensor readings, such as:
+- heart rate anomaly: bpm < HR_LOW_BPM or bpm > HR_HIGH_BPM for HR_ANOMALY_CONSECUTIVE consecutive readings
+- flame detected: flame_detected=True in ENV reading
     """
 
     def __init__(self):
@@ -31,9 +31,9 @@ class AlertDetector:
                         "device_id": r["device_id"],
                         "timestamp": r["timestamp"],
                     })
-                    logger.warning("火焰报警！device=%s", r["device_id"])
+                    logger.warning("Flame alert! device=%s", r["device_id"])
                 elif not flame:
-                    self._flame_active = False   # 火焰消失，重置
+                    self._flame_active = False   # Flame disappeared, reset flag
         return alerts
 
     # ── 私有 ────────────────────────────────────────────────────────────
@@ -44,13 +44,13 @@ class AlertDetector:
 
         if is_anomaly:
             self._hr_anomaly_streak += 1
-            logger.debug("心率异常 bpm=%.1f 连续=%d", bpm, self._hr_anomaly_streak)
+            logger.debug("Heart rate anomaly bpm=%.1f consecutive=%d", bpm, self._hr_anomaly_streak)
         else:
-            self._hr_anomaly_streak = 0   # 恢复正常则重置
+            self._hr_anomaly_streak = 0   #恢复正常则重置
             return None
 
         if self._hr_anomaly_streak == config.HR_ANOMALY_CONSECUTIVE:
-            logger.warning("心率报警 bpm=%.1f device=%s", bpm, r["device_id"])
+            logger.warning("Heart rate alert bpm=%.1f device=%s", bpm, r["device_id"])
             return {
                 "type":      "HEART_RATE_ANOMALY",
                 "device_id": r["device_id"],

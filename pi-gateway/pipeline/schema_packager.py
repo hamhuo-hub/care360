@@ -6,9 +6,8 @@ logger = logging.getLogger(__name__)
 
 def unpack(batch: dict) -> list[dict]:
     """
-    将手表原始批次转换为标准化读数列表：
-    - accuracy < 2 的读数丢弃（佩戴不紧，数据不可信）
-    - 还原每条读数的真实时间戳：sys_timestamp + offset_ms
+    repackage raw batch data into a list of standardized readings,
+filtering out low-accuracy items.
     """
     base_ts  = batch.get("sys_timestamp", int(time.time() * 1000))
     device   = batch.get("device_id", "unknown")
@@ -16,7 +15,7 @@ def unpack(batch: dict) -> list[dict]:
 
     for item in batch.get("payload", []):
         if item.get("accuracy", 0) < 2:
-            logger.debug("丢弃低精度读数 accuracy=%d sensor=%s",
+            logger.debug("Discarding low-accuracy reading accuracy=%d sensor=%s",
                          item.get("accuracy"), item.get("sensor"))
             continue
 

@@ -10,19 +10,18 @@ import wave
 
 logger = logging.getLogger(__name__)
 
-# ── 报警音参数 ──────────────────────────────────────────
-_FREQ_HZ     = 880     # A5，刺耳但不至于令人崩溃
+# ── parameters ──────────────────────────────────────────
+_FREQ_HZ     = 880     
 _DURATION_S  = 2.0
 _SAMPLE_RATE = 44100
 
 _ALERT_MESSAGES = {
-    "HEART_RATE_ANOMALY": "心率异常",
-    "FLAME_DETECTED":     "火焰警报",
+    "HEART_RATE_ANOMALY": "Heart rate anomaly",
+    "FLAME_DETECTED":     "Flame detected",
 }
 
 
 def _build_wav() -> bytes:
-    """在启动时生成一次，之后直接复用。"""
     n = int(_SAMPLE_RATE * _DURATION_S)
     buf = io.BytesIO()
     with wave.open(buf, "wb") as w:
@@ -39,11 +38,6 @@ _WAV_BYTES = _build_wav()
 
 
 class LocalNotifier:
-    """
-    本地报警：控制台打印 + 蜂鸣 2 秒。
-    播放在独立线程，不阻塞采集主循环。
-    同一时间只播一次，不叠加。
-    """
 
     def __init__(self):
         self._playing = threading.Lock()
@@ -60,7 +54,6 @@ class LocalNotifier:
         if not self._playing.acquire(blocking=False):
             return
         try:
-            # 写临时文件，避免 PipeWire/aplay 管道卡死
             with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as f:
                 f.write(_WAV_BYTES)
                 tmp = f.name
@@ -68,12 +61,12 @@ class LocalNotifier:
                 subprocess.run(["aplay", "-q", tmp],
                                timeout=_DURATION_S + 2, stderr=subprocess.DEVNULL)
             except FileNotFoundError:
-                logger.warning("aplay 未找到")
+                logger.warning("aplay not found, cannot play alert sound")
             except subprocess.TimeoutExpired:
-                logger.warning("播放超时")
+                logger.warning("Playback timeout, killing aplay process")
             finally:
                 os.unlink(tmp)
         except Exception as exc:
-            logger.warning("播放报警音失败: %s", exc)
+            logger.warning("Failed to play alert sound: %s", exc)
         finally:
             self._playing.release()

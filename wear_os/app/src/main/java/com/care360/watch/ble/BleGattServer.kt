@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicReference
 
 private const val TAG = "Care360BLE"
 
-// 两端硬编码同一对 UUID，见 DATA_CONTRACT.md § 4
+// fixed UUID
 val SERVICE_UUID    : UUID = UUID.fromString("12345678-1234-1234-1234-123456789abc")
 val CHAR_UUID       : UUID = UUID.fromString("12345678-1234-1234-1234-123456789def")
 private val CCCD_UUID: UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
@@ -33,11 +33,9 @@ class BleGattServer(private val context: Context) {
     private val btManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
     private val btAdapter = btManager.adapter
     private var gattServer: BluetoothGattServer? = null
-
-    // 当前连接的 Pi 设备，原子引用保证线程安全
     private val connectedDevice = AtomicReference<BluetoothDevice?>(null)
 
-    // ---- 生命周期 --------------------------------------------------------
+    // ---- lifecycle --------------------------------------------------------
 
     @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
     fun start() {
@@ -57,18 +55,18 @@ class BleGattServer(private val context: Context) {
         gattServer = null
     }
 
-    // ---- 对外接口 --------------------------------------------------------
+    // ---- adapters --------------------------------------------------------
 
     /**
-     * 向已连接的 Pi 发送一批 JSON。
-     * 批次 JSON 预估 < 490 字节，单包发完；若超限则在 payload 数组层面拆批（见契约 § 4）。
-     * 调用方（CollectorService）保证 jsonBytes 已在限额内。
+     * send Json bytes to connected Pi via BLE notification. 
+     * If no Pi connected or GATT server not ready, 
+     * drop the data silently.
      */
     @RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
     private fun ByteArray.toHex() = joinToString("") { "%02x".format(it) }
 
     fun notify(jsonBytes: ByteArray) {
-        Log.d(TAG, "发送通知 ${jsonBytes.size} bytes, connected=${isConnected()}")
+        Log.d(TAG, "send ${jsonBytes.size} bytes, connected=${isConnected()}")
         val device = connectedDevice.get() ?: return
         val server = gattServer ?: return
         val char = server.getService(SERVICE_UUID)
@@ -80,7 +78,7 @@ class BleGattServer(private val context: Context) {
 
     fun isConnected(): Boolean = connectedDevice.get() != null
 
-    // ---- GATT 服务构建 --------------------------------------------------
+    // ---- GATT service --------------------------------------------------
 
     private fun buildService(): BluetoothGattService {
         val char = BluetoothGattCharacteristic(
@@ -88,7 +86,6 @@ class BleGattServer(private val context: Context) {
             BluetoothGattCharacteristic.PROPERTY_NOTIFY,
             BluetoothGattCharacteristic.PERMISSION_READ,
         )
-        // CCCD descriptor：Pi 订阅通知时写入 0x0001
         char.addDescriptor(
             BluetoothGattDescriptor(
                 CCCD_UUID,
@@ -99,7 +96,7 @@ class BleGattServer(private val context: Context) {
             .also { it.addCharacteristic(char) }
     }
 
-    // ---- GATT 回调 ------------------------------------------------------
+    // ---- GATT call ------------------------------------------------------
 
     private val serverCallback = object : BluetoothGattServerCallback() {
 
@@ -107,10 +104,10 @@ class BleGattServer(private val context: Context) {
         override fun onConnectionStateChange(device: BluetoothDevice, status: Int, newState: Int) {
             if (newState == BluetoothProfile.STATE_CONNECTED) {
                 connectedDevice.set(device)
-                Log.i(TAG, "Pi 已连接: ${device.address}")
+                Log.i(TAG, "Pi connected: ${device.address}")
             } else {
                 connectedDevice.compareAndSet(device, null)
-                Log.i(TAG, "Pi 已断开: ${device.address} status=$status")
+                Log.i(TAG, "Pi disconnected: ${device.address} status=$status")
             }
         }
 
@@ -126,20 +123,20 @@ class BleGattServer(private val context: Context) {
             preparedWrite: Boolean, responseNeeded: Boolean,
             offset: Int, value: ByteArray,
         ) {
-            Log.i(TAG, "CCCD 订阅请求 value=${value.toHex()}")
+            Log.i(TAG, "CCCD subscription request value=${value.toHex()}")
             if (responseNeeded) {
                 gattServer?.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, 0, null)
             }
         }
     }
 
-    // ---- BLE 广播 -------------------------------------------------------
+    // ---- BLE advertising -------------------------------------------------------
 
     private fun startAdvertising() {
         val settings = AdvertiseSettings.Builder()
             .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_LOW_LATENCY)
             .setConnectable(true)
-            .setTimeout(0) // 持续广播，不超时
+            .setTimeout(0) 
             .build()
 
         val data = AdvertiseData.Builder()

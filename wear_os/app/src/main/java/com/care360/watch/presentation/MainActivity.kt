@@ -29,16 +29,16 @@ private val REQUIRED_PERMISSIONS = arrayOf(
 
 class MainActivity : ComponentActivity() {
 
-    private var statusText by mutableStateOf("正在请求权限…")
+    private var statusText by mutableStateOf("requesting permissions...")
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { results ->
         if (results.values.all { it }) {
             startCollector()
-            statusText = "采集服务运行中"
+            statusText = "Collector service is running"
         } else {
-            statusText = "权限被拒绝，无法启动采集"
+            statusText = "Permissions denied, cannot start collector service"
         }
     }
 

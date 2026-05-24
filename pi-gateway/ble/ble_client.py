@@ -12,8 +12,7 @@ logger = logging.getLogger(__name__)
 
 class WatchBleClient:
     """
-    BLE Central：扫描手表广播 → 连接 → 订阅遥测 Notify → 回调上层。
-    断连后自动重试，上层无需关心重连逻辑。
+    BLE Central: scan → connect → subscribe to telemetry Notify → callback upper layer.
     """
 
     def __init__(self, on_batch: Callable[[dict], None]):
@@ -24,13 +23,13 @@ class WatchBleClient:
             try:
                 await self._connect_and_listen()
             except Exception as exc:
-                logger.warning("BLE 断连（%s），5s 后重试…", exc)
+                logger.warning("BLE disconnected (%s), retrying in 5s…", exc)
                 await asyncio.sleep(5)
 
-    # ── 内部 ──────────────────────────────────────────────────────────────
+    # ── core ──────────────────────────────────────────────────────────────
 
     async def _connect_and_listen(self):
-        logger.info("扫描 Care360 手表（UUID=%s）…", config.BLE_SERVICE_UUID)
+        logger.info("Scanning for Care360 watch (UUID=%s)…", config.BLE_SERVICE_UUID)
 
         device = await BleakScanner.find_device_by_filter(
             lambda d, adv: config.BLE_SERVICE_UUID.lower() in [
@@ -40,17 +39,17 @@ class WatchBleClient:
         )
 
         if device is None:
-            raise RuntimeError("超时未发现手表广播")
+            raise RuntimeError("Timeout: Watch broadcast not found")
 
-        logger.info("发现设备 %s，连接中…", device.address)
+        logger.info("Found device %s, connecting…", device.address)
 
         async with BleakClient(device, disconnected_callback=self._on_disconnect) as client:
-            logger.info("已连接，订阅遥测特征…")
+            logger.info("Connected, subscribing to telemetry characteristic…")
 
             await client.start_notify(config.BLE_CHAR_UUID, self._on_notify)
-            logger.info("已连接，等待数据…")
+            logger.info("Client is listening for notifications…")
 
-            # 挂起直到连接断开
+            
             await asyncio.Future()
 
     def _on_notify(self, _characteristic, data: bytearray):
@@ -58,7 +57,7 @@ class WatchBleClient:
             batch = json.loads(data.decode("utf-8"))
             self._on_batch(batch)
         except (json.JSONDecodeError, UnicodeDecodeError) as exc:
-            logger.warning("JSON 解析失败：%s", exc)
+            logger.warning("JSON parsing failed: %s", exc)
 
     def _on_disconnect(self, _client):
-        logger.warning("手表已断开连接")
+        logger.warning("Watch disconnected")

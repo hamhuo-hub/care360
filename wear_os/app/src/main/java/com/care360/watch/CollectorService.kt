@@ -64,16 +64,15 @@ class CollectorService : Service() {
 
     override fun onBind(intent: Intent?): IBinder? = null
 
-    // ---- 核心批次循环 ----------------------------------------------------
+    // ---- main loop ----------------------------------------------------
 
     private fun startBatchLoop() {
         scope.launch {
-            // 丢弃启动期间积累的读数，保证第一个批次窗口也是干净的 5 秒
+            // drop initial data 5 seconds to let sensors stabilize, avoid sending a large batch on every start
             sensorManager.drainReadings()
             while (isActive) {
                 delay(BATCH_INTERVAL_MS)
 
-                // Pi 未连接时跳过序列化，节省 CPU
                 if (!bleServer.isConnected()) continue
 
                 val (windowStart, readings) = sensorManager.drainReadings()
@@ -81,7 +80,7 @@ class CollectorService : Service() {
 
                 val batch = TelemetryBatch(
                     deviceId     = DEVICE_ID,
-                    sysTimestamp = windowStart,   // 批次窗口起点，offset_ms 从此处计算
+                    sysTimestamp = windowStart,   
                     payload      = readings,
                 )
 
@@ -89,7 +88,7 @@ class CollectorService : Service() {
                 val bytes = json.toByteArray(Charsets.UTF_8)
                 Log.i(TAG, "Batch: ${readings.size} readings, ${bytes.size} bytes, Pi connected=${bleServer.isConnected()}")
 
-                // 契约 § 4：单批超 490 字节时在 payload 层拆分
+                // BLE characteristic max size is 512 bytes, but to be safe we use 490 as the threshold. If exceeded, split the batch and send in two halves.
                 if (bytes.size <= 490) {
                     bleServer.notify(bytes)
                 } else {
@@ -99,7 +98,7 @@ class CollectorService : Service() {
         }
     }
 
-    // ---- JSON 序列化 -----------------------------------------------------
+    // ---- JSON serialization -----------------------------------------------------
 
     private fun serialize(batch: TelemetryBatch): String {
         val payloadArr = JSONArray()
@@ -120,7 +119,7 @@ class CollectorService : Service() {
         put("offset_ms", r.offsetMs)
     }
 
-    // 超限时每次发一半 payload，递归直到全部发完
+    // send batch in halves if it exceeds BLE size limit, recursively split if still too large (in case of very large batches or many readings with multiple values)
     private fun splitAndNotify(batch: TelemetryBatch) {
         val half = batch.payload.size / 2
         listOf(
@@ -133,7 +132,7 @@ class CollectorService : Service() {
         }
     }
 
-    // ---- 权限检查 --------------------------------------------------------
+    // ---- permission checks --------------------------------------------------------
 
     private fun hasBluetoothPermissions(): Boolean =
         listOf(
@@ -141,18 +140,18 @@ class CollectorService : Service() {
             Manifest.permission.BLUETOOTH_ADVERTISE,
         ).all { ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED }
 
-    // ---- 前台通知 --------------------------------------------------------
+    // ---- foreground notification --------------------------------------------------------
 
     private fun buildNotification(): Notification {
         val manager = getSystemService(NotificationManager::class.java)
         if (manager.getNotificationChannel(CHANNEL_ID) == null) {
             manager.createNotificationChannel(
-                NotificationChannel(CHANNEL_ID, "Care360 采集", NotificationManager.IMPORTANCE_LOW)
+                NotificationChannel(CHANNEL_ID, "Care360 COLLECTOR", NotificationManager.IMPORTANCE_LOW)
             )
         }
         return Notification.Builder(this, CHANNEL_ID)
-            .setContentTitle("Care360 运行中")
-            .setContentText("生理数据采集中…")
+            .setContentTitle("Care360 RUNNING")
+            .setContentText("COLLECTING DATA")
             .setSmallIcon(android.R.drawable.ic_menu_compass)
             .setOngoing(true)
             .build()
